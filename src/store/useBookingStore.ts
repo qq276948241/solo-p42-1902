@@ -15,28 +15,39 @@ interface BookingStore {
   bookings: Booking[];
   selectedCourseId: string | null;
   isModalOpen: boolean;
+  phone: string;
+  submitting: boolean;
   toast: Toast | null;
   openBookingModal: (courseId: string) => void;
   closeBookingModal: () => void;
-  submitBooking: (phone: string) => { success: boolean; message: string };
+  setPhone: (value: string) => void;
+  submitBooking: () => { success: boolean; message: string };
   getCourseById: (id: string) => Course | undefined;
   showToast: (type: ToastType, message: string) => void;
   hideToast: () => void;
 }
+
+const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
 export const useBookingStore = create<BookingStore>((set, get) => ({
   courses: initialCourses,
   bookings: [],
   selectedCourseId: null,
   isModalOpen: false,
+  phone: "",
+  submitting: false,
   toast: null,
 
   openBookingModal: (courseId: string) => {
-    set({ selectedCourseId: courseId, isModalOpen: true });
+    set({ selectedCourseId: courseId, isModalOpen: true, phone: "", submitting: false });
   },
 
   closeBookingModal: () => {
-    set({ selectedCourseId: null, isModalOpen: false });
+    set({ selectedCourseId: null, isModalOpen: false, submitting: false });
+  },
+
+  setPhone: (value: string) => {
+    set({ phone: value.replace(/\D/g, "").slice(0, 11) });
   },
 
   showToast: (type: ToastType, message: string) => {
@@ -47,14 +58,13 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
     set({ toast: null });
   },
 
-  submitBooking: (phone: string) => {
-    const { selectedCourseId, courses, bookings } = get();
+  submitBooking: () => {
+    const { selectedCourseId, courses, bookings, phone } = get();
     if (!selectedCourseId) {
       return { success: false, message: "未选择课程" };
     }
 
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
+    if (!PHONE_REGEX.test(phone)) {
       return { success: false, message: "请输入有效的11位手机号" };
     }
 

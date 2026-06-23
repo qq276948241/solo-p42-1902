@@ -18,7 +18,7 @@ function getTodayIndex(): number {
 }
 
 export default function Schedule() {
-  const { courses } = useBookingStore();
+  const courses = useBookingStore((s) => s.courses);
   const [selectedDay, setSelectedDay] = useState<number>(getTodayIndex());
 
   const filteredCourses = useMemo(

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useBookingStore } from "../store/useBookingStore";
 import type { Course } from "../types";
 
@@ -26,18 +26,16 @@ export interface UseBookingReturn {
 }
 
 export function useBooking(): UseBookingReturn {
-  const {
-    isModalOpen,
-    selectedCourseId,
-    openBookingModal,
-    closeBookingModal,
-    submitBooking: storeSubmit,
-    getCourseById,
-    showToast,
-  } = useBookingStore();
-
-  const [phone, setPhoneState] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const isModalOpen = useBookingStore((s) => s.isModalOpen);
+  const selectedCourseId = useBookingStore((s) => s.selectedCourseId);
+  const phone = useBookingStore((s) => s.phone);
+  const submitting = useBookingStore((s) => s.submitting);
+  const storeSetPhone = useBookingStore((s) => s.setPhone);
+  const openBookingModal = useBookingStore((s) => s.openBookingModal);
+  const closeBookingModal = useBookingStore((s) => s.closeBookingModal);
+  const storeSubmit = useBookingStore((s) => s.submitBooking);
+  const getCourseById = useBookingStore((s) => s.getCourseById);
+  const showToast = useBookingStore((s) => s.showToast);
 
   const selectedCourse = selectedCourseId ? getCourseById(selectedCourseId) ?? null : null;
 
@@ -50,13 +48,6 @@ export function useBooking(): UseBookingReturn {
   const totalSpots = selectedCourse?.totalSpots ?? 0;
 
   useEffect(() => {
-    if (!isModalOpen) {
-      setPhoneState("");
-      setSubmitting(false);
-    }
-  }, [isModalOpen]);
-
-  useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !submitting) closeBookingModal();
     };
@@ -64,14 +55,13 @@ export function useBooking(): UseBookingReturn {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isModalOpen, closeBookingModal, submitting]);
 
-  const setPhone = useCallback((value: string) => {
-    setPhoneState(value.replace(/\D/g, "").slice(0, 11));
-  }, []);
+  const setPhone = useCallback(
+    (value: string) => storeSetPhone(value),
+    [storeSetPhone]
+  );
 
   const openBooking = useCallback(
-    (courseId: string) => {
-      openBookingModal(courseId);
-    },
+    (courseId: string) => openBookingModal(courseId),
     [openBookingModal]
   );
 
@@ -79,7 +69,7 @@ export function useBooking(): UseBookingReturn {
     if (!submitting) closeBookingModal();
   }, [submitting, closeBookingModal]);
 
-  const submitBooking = useCallback(async () => {
+  const submitBooking = useCallback(() => {
     if (submitting || !selectedCourse) return;
 
     if (!isPhoneValid) {
@@ -92,19 +82,19 @@ export function useBooking(): UseBookingReturn {
       return;
     }
 
-    setSubmitting(true);
-    const result = storeSubmit(phone.trim());
+    useBookingStore.setState({ submitting: true });
+
+    const result = storeSubmit();
     showToast(result.success ? "success" : "error", result.message);
 
     if (result.success) {
       setTimeout(() => {
         closeBookingModal();
-        setSubmitting(false);
       }, 600);
     } else {
-      setSubmitting(false);
+      useBookingStore.setState({ submitting: false });
     }
-  }, [submitting, selectedCourse, isPhoneValid, isFull, phone, storeSubmit, showToast, closeBookingModal]);
+  }, [submitting, selectedCourse, isPhoneValid, isFull, storeSubmit, showToast, closeBookingModal]);
 
   const getSpotStatus = useCallback((course: Course) => {
     const remaining = course.remainingSpots;
