@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import BottomTabBar from "./components/BottomTabBar";
 import BookingModal from "./components/BookingModal";
+import GlobalToast from "./components/GlobalToast";
 import Schedule from "./pages/Schedule";
 import Coaches from "./pages/Coaches";
 import Pricing from "./pages/Pricing";
@@ -25,6 +26,7 @@ export default function App() {
         </footer>
         <BottomTabBar />
         <BookingModal />
+        <GlobalToast />
       </div>
     </BrowserRouter>
   );

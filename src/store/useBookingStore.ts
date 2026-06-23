@@ -2,15 +2,26 @@ import { create } from "zustand";
 import { courses as initialCourses } from "../data/courses";
 import type { Course, Booking } from "../types";
 
+export type ToastType = "success" | "error";
+
+export interface Toast {
+  id: number;
+  type: ToastType;
+  message: string;
+}
+
 interface BookingStore {
   courses: Course[];
   bookings: Booking[];
   selectedCourseId: string | null;
   isModalOpen: boolean;
+  toast: Toast | null;
   openBookingModal: (courseId: string) => void;
   closeBookingModal: () => void;
   submitBooking: (phone: string) => { success: boolean; message: string };
   getCourseById: (id: string) => Course | undefined;
+  showToast: (type: ToastType, message: string) => void;
+  hideToast: () => void;
 }
 
 export const useBookingStore = create<BookingStore>((set, get) => ({
@@ -18,6 +29,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   bookings: [],
   selectedCourseId: null,
   isModalOpen: false,
+  toast: null,
 
   openBookingModal: (courseId: string) => {
     set({ selectedCourseId: courseId, isModalOpen: true });
@@ -25,6 +37,14 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
 
   closeBookingModal: () => {
     set({ selectedCourseId: null, isModalOpen: false });
+  },
+
+  showToast: (type: ToastType, message: string) => {
+    set({ toast: { id: Date.now(), type, message } });
+  },
+
+  hideToast: () => {
+    set({ toast: null });
   },
 
   submitBooking: (phone: string) => {
@@ -68,8 +88,6 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
     set({
       courses: newCourses,
       bookings: [...bookings, newBooking],
-      selectedCourseId: null,
-      isModalOpen: false,
     });
 
     return { success: true, message: "预约成功！我们将通过短信提醒您上课" };

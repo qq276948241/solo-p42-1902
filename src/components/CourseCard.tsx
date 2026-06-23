@@ -78,12 +78,12 @@ export default function CourseCard({ course, style, className = "" }: Props) {
         disabled={isFull}
         className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
           isFull
-            ? "bg-ink-100 text-ink-400 cursor-not-allowed"
+            ? "bg-ink-200 text-ink-500 cursor-not-allowed hover:bg-ink-200"
             : "bg-brand-500 hover:bg-brand-600 text-white hover:shadow-glow"
         }`}
       >
         {isFull ? (
-          "名额已满"
+          "已满"
         ) : (
           <>
             <Flame className="w-4 h-4" />
