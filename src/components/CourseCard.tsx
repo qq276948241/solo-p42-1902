@@ -1,6 +1,6 @@
 import { Clock, User, Users, Flame } from "lucide-react";
 import type { Course } from "../types";
-import { useBookingStore } from "../store/useBookingStore";
+import { useBooking } from "../hooks/useBooking";
 
 const categoryColors: Record<string, string> = {
   力量: "bg-orange-100 text-orange-700 border-orange-200",
@@ -17,14 +17,17 @@ interface Props {
 }
 
 export default function CourseCard({ course, style, className = "" }: Props) {
-  const { openBookingModal } = useBookingStore();
-  const isFull = course.remainingSpots <= 0;
-  const isLow = course.remainingSpots > 0 && course.remainingSpots <= 5;
+  const { openBooking, getSpotStatus } = useBooking();
+  const { isFull, isLow, remaining } = getSpotStatus(course);
+
+  const handleClick = () => {
+    if (!isFull) openBooking(course.id);
+  };
 
   return (
     <div
       style={style}
-      onClick={() => !isFull && openBookingModal(course.id)}
+      onClick={handleClick}
       className={`group relative bg-white rounded-3xl p-5 shadow-soft hover:shadow-card transition-all duration-300 cursor-pointer overflow-hidden border border-ink-100 ${
         isFull ? "opacity-60 cursor-not-allowed" : "hover:-translate-y-1"
       } ${className}`}
@@ -50,7 +53,7 @@ export default function CourseCard({ course, style, className = "" }: Props) {
             }`}
           >
             <Users className="w-3 h-3" />
-            {isFull ? "已约满" : `剩${course.remainingSpots}位`}
+            {isFull ? "已约满" : `剩${remaining}位`}
           </span>
         </div>
       </div>
@@ -76,6 +79,10 @@ export default function CourseCard({ course, style, className = "" }: Props) {
 
       <button
         disabled={isFull}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
         className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
           isFull
             ? "bg-ink-200 text-ink-500 cursor-not-allowed hover:bg-ink-200"

@@ -1,57 +1,34 @@
-import { useEffect, useState } from "react";
 import { X, Clock, User, MapPin } from "lucide-react";
-import { useBookingStore } from "../store/useBookingStore";
+import { useBooking } from "../hooks/useBooking";
 
 export default function BookingModal() {
-  const { isModalOpen, closeBookingModal, selectedCourseId, getCourseById, submitBooking, showToast } =
-    useBookingStore();
-  const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    selectedCourse,
+    isModalOpen,
+    phone,
+    submitting,
+    isPhoneValid,
+    isFull,
+    isLowStock,
+    remainingSpots,
+    totalSpots,
+    setPhone,
+    closeBooking,
+    submitBooking,
+  } = useBooking();
 
-  const course = selectedCourseId ? getCourseById(selectedCourseId) : null;
+  if (!isModalOpen || !selectedCourse) return null;
 
-  useEffect(() => {
-    if (!isModalOpen) {
-      setPhone("");
-      setSubmitting(false);
-    }
-  }, [isModalOpen]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !submitting) closeBookingModal();
-    };
-    if (isModalOpen) document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [isModalOpen, closeBookingModal, submitting]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
-
-    setSubmitting(true);
-    const result = submitBooking(phone.trim());
-    showToast(result.success ? "success" : "error", result.message);
-
-    if (result.success) {
-      setTimeout(() => {
-        closeBookingModal();
-        setSubmitting(false);
-      }, 600);
-    } else {
-      setSubmitting(false);
-    }
+    submitBooking();
   };
-
-  if (!isModalOpen || !course) return null;
-
-  const isFull = course.remainingSpots <= 0;
 
   return (
     <>
       <div
         className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm animate-fade-in"
-        onClick={() => !submitting && closeBookingModal()}
+        onClick={closeBooking}
       />
       <div className="fixed inset-x-0 bottom-0 md:inset-0 z-50 flex md:items-center md:justify-center p-0 md:p-4">
         <div
@@ -60,7 +37,7 @@ export default function BookingModal() {
         >
           <div className="relative bg-gradient-to-br from-ink-800 to-ink-900 p-6 text-white">
             <button
-              onClick={() => !submitting && closeBookingModal()}
+              onClick={closeBooking}
               disabled={submitting}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all disabled:opacity-50"
               aria-label="关闭"
@@ -68,19 +45,19 @@ export default function BookingModal() {
               <X className="w-4 h-4" />
             </button>
             <span className="inline-block px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-semibold mb-3">
-              {course.category}
+              {selectedCourse.category}
             </span>
             <h3 className="font-display font-bold text-xl leading-tight mb-2">
-              {course.name}
+              {selectedCourse.name}
             </h3>
             <div className="flex flex-wrap items-center gap-4 text-sm text-ink-300">
               <span className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-brand-400" />
-                {course.coach}
+                {selectedCourse.coach}
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-400" />
-                {course.startTime} · {course.duration}分钟
+                {selectedCourse.startTime} · {selectedCourse.duration}分钟
               </span>
             </div>
           </div>
@@ -95,12 +72,12 @@ export default function BookingModal() {
                 className={`font-display font-bold text-lg transition-colors ${
                   isFull
                     ? "text-red-500"
-                    : course.remainingSpots <= 5
+                    : isLowStock
                     ? "text-amber-500"
                     : "text-brand-500"
                 }`}
               >
-                {isFull ? "已约满" : `${course.remainingSpots} / ${course.totalSpots}`}
+                {isFull ? "已约满" : `${remainingSpots} / ${totalSpots}`}
               </span>
             </div>
 
@@ -116,7 +93,7 @@ export default function BookingModal() {
                 maxLength={11}
                 placeholder="请输入11位手机号接收预约提醒"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setPhone(e.target.value)}
                 disabled={isFull || submitting}
                 className="w-full px-4 py-3.5 rounded-2xl border-2 border-ink-200 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 text-base transition-all disabled:bg-ink-50 disabled:text-ink-400"
               />
@@ -127,14 +104,14 @@ export default function BookingModal() {
 
             <button
               type="submit"
-              disabled={isFull || phone.length !== 11 || submitting}
+              disabled={isFull || !isPhoneValid || submitting}
               className="w-full py-4 rounded-2xl bg-brand-500 hover:bg-brand-600 disabled:bg-ink-200 disabled:text-ink-400 disabled:cursor-not-allowed text-white font-semibold text-base transition-all duration-200 hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
               {submitting
                 ? "预约中..."
                 : isFull
                 ? "课程已约满"
-                : phone.length === 11
+                : isPhoneValid
                 ? "确认预约课程"
                 : "请输入完整手机号"}
             </button>
